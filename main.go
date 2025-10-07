@@ -10,6 +10,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"main/prompt"
 )
 
 type OllamaRequest struct {
@@ -53,12 +55,10 @@ func main() {
 		log.Fatalf("Error while getting git diff \n %s", err)
 	}
 
-	fmt.Println(diff)
+	prompt := prompt.GeneratePrompt(diff)
+	fmt.Println(prompt)
 
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Enter your prompt: ")
-	prompt, _ := reader.ReadString('\n')
-	prompt = strings.TrimSpace(prompt)
+	fmt.Println("GENERATING...")
 
 	reqBody := OllamaRequest{
 		Model:  modelName,
