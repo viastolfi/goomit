@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -21,6 +22,20 @@ type OllamaResponse struct {
 	Done     bool   `json:"done"`
 }
 
+func getGitDiff() (string, error) {
+	cmd := exec.Command("git", "diff", "--color=always")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("No git repo detected in your current directory \n", err)
+	}
+
+	if len(output) == 0 {
+		return "", fmt.Errorf("No changes detected, are you sure you have something to commit ?")
+	}
+
+	return string(output), nil
+}
+
 func main() {
 	var modelName string = "llama3"
 
@@ -32,6 +47,13 @@ func main() {
 			log.Fatalf("unknown argument : %s \nPlease refer to `goomit --help` for more help", args[0])
 		}
 	}
+
+	diff, err := getGitDiff()
+	if err != nil {
+		log.Fatalf("Error while getting git diff \n %s", err)
+	}
+
+	fmt.Println(diff)
 
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter your prompt: ")
