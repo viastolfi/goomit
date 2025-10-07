@@ -38,6 +38,24 @@ func getGitDiff() (string, error) {
 	return string(output), nil
 }
 
+func commit(message string) error {
+	cmd := exec.Command("git", "add", "-u")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("Error while adding file to commit \n", err)
+	}
+
+	fmt.Println(output)
+	cmd = exec.Command("git", "commit", "-m", message)
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		fmt.Errorf("Error while commiting changes \n", err)
+	}
+
+	fmt.Println(output)
+	return nil
+}
+
 func main() {
 	var modelName string = "llama3"
 
@@ -76,6 +94,7 @@ func main() {
 	}
 	defer resp.Body.Close()
 
+	var commitMsg string
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -91,8 +110,22 @@ func main() {
 		fmt.Print(msg.Response)
 
 		if msg.Done {
+			commitMsg = msg.Response
 			break
 		}
 	}
-	fmt.Println("\n--- Generation Complete ---")
+
+	fmt.Println("\n\n\n\n\n-----------------\n%s", commitMsg)
+
+	var input byte
+	fmt.Println("Do you want to use this commit message ? y/n/Y/N [y] : ")
+	fmt.Scan(&input)
+	if input == 'y' || input == 'Y' || input == '\n' {
+		if err := commit(commitMsg); err != nil {
+			log.Fatalf("Error during commit phase : %s\nTry to commit yourself", err)
+		}
+		fmt.Println("All done ! You can now push your commits\nThanks for using goomit")
+	}
+
+	fmt.Println("Closing !")
 }

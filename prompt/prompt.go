@@ -13,6 +13,10 @@ func promptTitle() string {
 	return "Generate a concise commit message starting with a type keyword (fix:, feat:, ci:, etc.) followed by a one-line summary describing the overall change clearly and briefly. Keep it short, precise, and focused."
 }
 
+func promptEnding() string {
+	return "just give me the actual commit message and nothing else in your answer. I want to use your response as it is."
+}
+
 func GeneratePrompt(diff string) string {
-	return strings.TrimSpace(promptContext() + promptTitle() + "Here is the git diff I want you to generate a commit message for : " + diff)
+	return strings.TrimSpace(promptContext() + promptTitle() + "Here is the git diff I want you to generate a commit message for : " + diff + promptEnding())
 }
