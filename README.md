@@ -14,7 +14,13 @@ This is more a POC than anything else but if it works that's cool !
 
 ### How to use
 
-**WIP**
+Download the model you want using ollama `ollama pull llama3`
+
+Then just use the app, you can specify the model by using the `-m` argument, default one is llama3
+
+- go mod tidy
+- ./build.sh
+- ./goomit -m my-model
 
 ### Author
 
