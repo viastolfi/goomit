@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -21,13 +22,24 @@ type OllamaResponse struct {
 }
 
 func main() {
+	var modelName string = "llama3"
+
+	args := os.Args[1:]
+	if len(args) > 0 {
+		if args[0] == "-m" || args[0] == "--model" {
+			modelName = args[1]
+		} else {
+			log.Fatalf("unknown argument : %s \nPlease refer to `goomit --help` for more help", args[0])
+		}
+	}
+
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Enter your prompt: ")
 	prompt, _ := reader.ReadString('\n')
 	prompt = strings.TrimSpace(prompt)
 
 	reqBody := OllamaRequest{
-		Model:  "llama3",
+		Model:  modelName,
 		Prompt: prompt,
 	}
 

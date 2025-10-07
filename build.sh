@@ -1,4 +1,4 @@
 #!/bin/bash
 
 gofmt -w .
-go run .
+go build -o goomit
