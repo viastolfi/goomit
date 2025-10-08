@@ -5,14 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
 	"regexp"
 	"strings"
+
+	"main/prompt"
 )
 
 func GenerateConfig() error {
-	var files []string
-
+	var context string
 	cmd := exec.Command("mkdir", ".goomit")
 	_, err := cmd.CombinedOutput()
 
@@ -36,7 +38,11 @@ func GenerateConfig() error {
 		fmt.Println("No README.md file detected")
 	} else {
 		fmt.Println("README.md file use in config generation")
-		files = append(files, "README.md")
+		b, err := os.ReadFile("README.md")
+		if err != nil {
+			return err
+		}
+		context += string(b)
 	}
 
 	repo, err := getRepoName()
@@ -46,7 +52,17 @@ func GenerateConfig() error {
 
 	fmt.Println("Repo find :", repo, "trying to access it via github API")
 
-	githubApiCall(repo)
+	opts, err := githubApiCall(repo)
+	if err != nil {
+		return err
+	}
+
+	context += opts[0]
+	context += opts[1]
+
+	p := prompt.GenerateConfPrompt(context)
+	fmt.Println(p)
+
 	return nil
 }
 
@@ -72,6 +88,8 @@ func getRepoName() (string, error) {
 }
 
 func githubApiCall(repo string) ([]string, error) {
+	var out []string
+
 	url := "https://api.github.com/repos/" + repo
 
 	fmt.Println("Performing ", url, "API call")
@@ -86,8 +104,12 @@ func githubApiCall(repo string) ([]string, error) {
 		return nil, fmt.Errorf("Error while reading response body: ", err)
 	}
 
-	fmt.Println("Repo detected language :", j["language"])
-	fmt.Println("Repo detected description :", j["description"])
+	lang, _ := j["language"].(string)
+	desc, _ := j["description"].(string)
 
-	return nil, nil
+	fmt.Println("Repo detected language:", lang)
+	fmt.Println("Repo detected description:", desc)
+
+	out = append(out, "language: "+lang, "description:"+desc)
+	return out, nil
 }
