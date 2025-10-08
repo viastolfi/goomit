@@ -124,7 +124,6 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	defer term.Restore(int(os.Stdin.Fd()), oldState)
 
 	b := make([]byte, 1)
 	_, err = os.Stdin.Read(b)
@@ -133,6 +132,7 @@ func main() {
 		return
 	}
 
+	term.Restore(int(os.Stdin.Fd()), oldState)
 	if b[0] == 'y' || b[0] == 'Y' || b[0] == '\r' {
 		if err := commit(commitMsg); err != nil {
 			log.Fatalf("Error during commit phase : %s\nTry to commit yourself", err)
