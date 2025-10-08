@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"main/config"
 	"main/prompt"
 
 	"golang.org/x/term"
@@ -65,6 +66,12 @@ func main() {
 	if len(args) > 0 {
 		if args[0] == "-m" || args[0] == "--model" {
 			modelName = args[1]
+		} else if args[0] == "config" && args[1] == "generate" {
+			if err := config.GenerateConfig(); err != nil {
+				log.Fatalf("Error while generating config\n%s", err)
+			}
+			fmt.Println("Config generated on '.goomit/'")
+			return
 		} else {
 			log.Fatalf("unknown argument : %s \nPlease refer to `goomit --help` for more help", args[0])
 		}
