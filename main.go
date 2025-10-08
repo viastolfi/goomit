@@ -42,19 +42,19 @@ func getGitDiff() (string, error) {
 
 func commit(message string) error {
 	cmd := exec.Command("git", "add", "-u")
-	output, err := cmd.CombinedOutput()
+	_, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("Error while adding file to commit \n", err)
 	}
 
-	fmt.Println(output)
+	fmt.Println("File added!")
 	cmd = exec.Command("git", "commit", "-m", message)
-	output, err = cmd.CombinedOutput()
+	_, err = cmd.CombinedOutput()
 	if err != nil {
 		fmt.Errorf("Error while commiting changes \n", err)
 	}
 
-	fmt.Println(output)
+	fmt.Println("Commit created!")
 	return nil
 }
 
@@ -132,7 +132,6 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	fmt.Printf("\nthe char %q was hit\n", string(b[0]))
 
 	if b[0] == 'y' || b[0] == 'Y' || b[0] == '\r' {
 		if err := commit(commitMsg); err != nil {
