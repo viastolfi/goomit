@@ -1,8 +1,13 @@
 package config
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os/exec"
+	"regexp"
+	"strings"
 )
 
 func GenerateConfig() error {
@@ -34,5 +39,55 @@ func GenerateConfig() error {
 		files = append(files, "README.md")
 	}
 
+	repo, err := getRepoName()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Repo find :", repo, "trying to access it via github API")
+
+	githubApiCall(repo)
 	return nil
+}
+
+func getRepoName() (string, error) {
+	cmd := exec.Command("git", "config", "--get", "remote.origin.url")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		return "", fmt.Errorf("Error: could not read remote.origin.url — is this a Git repo?")
+	}
+
+	url := strings.TrimSpace(out.String())
+
+	re := regexp.MustCompile(`(?i)[:/]([^/]+/[^/]+?)(?:\.git)?$`)
+	match := re.FindStringSubmatch(url)
+	if len(match) < 2 {
+		return "", fmt.Errorf("Could not parse owner/repo from:", url)
+	}
+
+	repo := match[1]
+	return repo, nil
+}
+
+func githubApiCall(repo string) ([]string, error) {
+	url := "https://api.github.com/repos/" + repo
+
+	fmt.Println("Performing ", url, "API call")
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("Error while getting github info using api :", err)
+	}
+
+	var j map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&j)
+	if err != nil {
+		return nil, fmt.Errorf("Error while reading response body: ", err)
+	}
+
+	fmt.Println("Repo detected language :", j["language"])
+	fmt.Println("Repo detected description :", j["description"])
+
+	return nil, nil
 }
