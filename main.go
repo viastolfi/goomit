@@ -1,31 +1,17 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/exec"
-	"strings"
 
+	"main/client"
 	"main/config"
 	"main/prompt"
 
 	"golang.org/x/term"
 )
-
-type OllamaRequest struct {
-	Model  string `json:"model"`
-	Prompt string `json:"prompt"`
-}
-
-type OllamaResponse struct {
-	Response string `json:"response"`
-	Done     bool   `json:"done"`
-}
 
 func getGitDiff() (string, error) {
 	cmd := exec.Command("git", "diff", "--color=always")
@@ -87,41 +73,14 @@ func main() {
 
 	fmt.Println("GENERATING...")
 
-	reqBody := OllamaRequest{
+	reqBody := client.OllamaRequest{
 		Model:  modelName,
 		Prompt: prompt,
 	}
 
-	body, err := json.Marshal(reqBody)
+	resp, err := client.AskAI(reqBody)
 	if err != nil {
-		panic(err)
-	}
-
-	resp, err := http.Post("http://localhost:11434/api/generate", "application/json", bytes.NewBuffer(body))
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-
-	var commitMsg string
-	scanner := bufio.NewScanner(resp.Body)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-
-		var msg OllamaResponse
-		if err := json.Unmarshal([]byte(line), &msg); err != nil {
-			continue
-		}
-
-		fmt.Print(msg.Response)
-		commitMsg += msg.Response
-
-		if msg.Done {
-			break
-		}
+		log.Fatalf("Error while generating", err)
 	}
 
 	fmt.Println("\nDo you want to use this commit message ? y/n/Y/N [y] : ")
@@ -141,7 +100,7 @@ func main() {
 
 	term.Restore(int(os.Stdin.Fd()), oldState)
 	if b[0] == 'y' || b[0] == 'Y' || b[0] == '\r' {
-		if err := commit(commitMsg); err != nil {
+		if err := commit(resp); err != nil {
 			log.Fatalf("Error during commit phase : %s\nTry to commit yourself", err)
 		}
 		fmt.Println("All done ! You can now push your commits\nThanks for using goomit")
