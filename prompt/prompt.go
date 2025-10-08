@@ -10,7 +10,7 @@ func promptContext() string {
 }
 
 func promptConfContext() string {
-	return "Your task is to summarize a bunch of different informtation about a git repository so this summization can then be used as a context element for other llm prompt to generate commit Message. You are going to be gived a README.md file text, the language used in the code base and the git description of the repository. Write your out puts as an md text that will then be writted in a file. Keep it not to verbose and relatively short. Make it so it's usable by llm to get context"
+	return "Your task is to summarize a bunch of different informtation about a git repository so this summization can then be used as a context element for other llm prompt to generate commit Message. You are going to be gived a README.md file text, the language used in the code base and the git description of the repository. Write your out puts as an md text that will then be writted in a file. Keep it not to verbose and relatively short. Make it so it's usable by llm to get context. I want the following things :\n* Very short summarisation of the apps\n* The key features\n* A brief tech stack with only the essential information\n"
 }
 
 func promptTitle() string {
