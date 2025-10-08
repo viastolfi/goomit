@@ -12,6 +12,8 @@ import (
 	"strings"
 
 	"main/prompt"
+
+	"golang.org/x/term"
 )
 
 type OllamaRequest struct {
@@ -36,6 +38,24 @@ func getGitDiff() (string, error) {
 	}
 
 	return string(output), nil
+}
+
+func commit(message string) error {
+	cmd := exec.Command("git", "add", "-u")
+	_, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("Error while adding file to commit \n", err)
+	}
+
+	fmt.Println("File added!")
+	cmd = exec.Command("git", "commit", "-m", message)
+	_, err = cmd.CombinedOutput()
+	if err != nil {
+		fmt.Errorf("Error while commiting changes \n", err)
+	}
+
+	fmt.Println("Commit created!")
+	return nil
 }
 
 func main() {
@@ -76,6 +96,7 @@ func main() {
 	}
 	defer resp.Body.Close()
 
+	var commitMsg string
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -89,10 +110,35 @@ func main() {
 		}
 
 		fmt.Print(msg.Response)
+		commitMsg += msg.Response
 
 		if msg.Done {
 			break
 		}
 	}
-	fmt.Println("\n--- Generation Complete ---")
+
+	fmt.Println("\nDo you want to use this commit message ? y/n/Y/N [y] : ")
+
+	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	b := make([]byte, 1)
+	_, err = os.Stdin.Read(b)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	term.Restore(int(os.Stdin.Fd()), oldState)
+	if b[0] == 'y' || b[0] == 'Y' || b[0] == '\r' {
+		if err := commit(commitMsg); err != nil {
+			log.Fatalf("Error during commit phase : %s\nTry to commit yourself", err)
+		}
+		fmt.Println("All done ! You can now push your commits\nThanks for using goomit")
+	}
+
+	fmt.Println("Closing !")
 }
