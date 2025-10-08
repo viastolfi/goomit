@@ -1,7 +1,7 @@
 ## GOOMIT
 
 > [!WARNING]
-> This is clearly a work in progress thing. This whole project is an excuse for me to learn a bit more about self hosted LLM and integration in local apps since this subject is directly connected to my enterprise job
+> This is clearly a work in progress thing. This whole project is an excuse for me to learn a bit more about self hosted LLM and integration in local apps since this subject is directly connected to my enterprise job \
 > Globally, just do your commit message yourself, if you have work on it, you should be able to resume it in a commit message ;)
 
 Goomit is an auto commit generator that uses LLM to generate commit message depending on your `git diff` command result. \
@@ -21,6 +21,15 @@ Then just use the app, you can specify the model by using the `-m` argument, def
 - go mod tidy
 - ./build.sh
 - ./goomit -m my-model
+
+### Limitations
+
+Since this is a work in progress there is some limitations :
+
+- Prompt isn't very polished yet and commit message can be inconsistent, too much verbose, paraphrasing the code line by line
+- I need to run some test by using different model so I can use the one I feel like is the best as the default one
+- The model as no context at all about your project and this is a feature I need to implement so the commit message is more accurate
+- Some bugs may or may not occurs, as I said this is not a production ready things but just a POC
 
 ### Author
 
