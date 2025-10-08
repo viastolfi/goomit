@@ -12,6 +12,8 @@ import (
 	"strings"
 
 	"main/prompt"
+
+	"golang.org/x/term"
 )
 
 type OllamaRequest struct {
@@ -108,19 +110,31 @@ func main() {
 		}
 
 		fmt.Print(msg.Response)
+		commitMsg += msg.Response
 
 		if msg.Done {
-			commitMsg = msg.Response
 			break
 		}
 	}
 
-	fmt.Println("\n\n\n\n\n-----------------\n%s", commitMsg)
+	fmt.Println("\nDo you want to use this commit message ? y/n/Y/N [y] : ")
 
-	var input byte
-	fmt.Println("Do you want to use this commit message ? y/n/Y/N [y] : ")
-	fmt.Scan(&input)
-	if input == 'y' || input == 'Y' || input == '\n' {
+	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer term.Restore(int(os.Stdin.Fd()), oldState)
+
+	b := make([]byte, 1)
+	_, err = os.Stdin.Read(b)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Printf("\nthe char %q was hit\n", string(b[0]))
+
+	if b[0] == 'y' || b[0] == 'Y' || b[0] == '\r' {
 		if err := commit(commitMsg); err != nil {
 			log.Fatalf("Error during commit phase : %s\nTry to commit yourself", err)
 		}
