@@ -13,39 +13,48 @@ import (
 )
 
 func main() {
-	var modelName string = "llama3"
+	var request client.OllamaRequest
+	request.Model = "llama3"
 
 	args := os.Args[1:]
 	if len(args) > 0 {
-		if args[0] == "-m" || args[0] == "--model" {
-			modelName = args[1]
-		} else if args[0] == "config" && args[1] == "generate" {
-			if err := config.GenerateConfig(); err != nil {
-				log.Fatalf("Error while generating config\n%s", err)
+		for i := range args {
+			if args[i] == "-m" || args[i] == "--model" {
+				if i == len(args)-1 {
+					log.Fatalf("Wrong inline argument usage\nuse --help for more information")
+				}
+				request.Model = args[i+1]
+				p, err := prompt.GeneratePrompt()
+				if err != nil {
+					log.Fatalf("Error while generating prompt\n", err)
+				}
+				request.Prompt = p
 			}
-			fmt.Println("Config generated on '.goomit/'")
-			return
-		} else {
-			log.Fatalf("unknown argument : %s \nPlease refer to `goomit --help` for more help", args[0])
+			if args[i] == "config" {
+				if i == len(args)-1 {
+					log.Fatalf("Wrong inline argument usage\nuse --help for more information")
+				} else if args[i+1] == "generate" {
+					p, err := config.GenerateConfig()
+					if err != nil {
+						log.Fatalf("Error while generating config prompt\n", err)
+					}
+					request.Prompt = p
+				}
+			}
 		}
+	} else {
+		p, err := prompt.GeneratePrompt()
+		if err != nil {
+			log.Fatalf("Error while generating config prompt\n", err)
+		}
+		request.Prompt = p
 	}
 
-	diff, err := client.GetGitDiff()
-	if err != nil {
-		log.Fatalf("Error while getting git diff \n %s", err)
-	}
-
-	prompt := prompt.GeneratePrompt(diff)
-	fmt.Println(prompt)
+	fmt.Println(request.Prompt)
 
 	fmt.Println("GENERATING...")
 
-	reqBody := client.OllamaRequest{
-		Model:  modelName,
-		Prompt: prompt,
-	}
-
-	resp, err := client.AskAI(reqBody)
+	resp, err := client.AskAI(request)
 	if err != nil {
 		log.Fatalf("Error while generating", err)
 	}

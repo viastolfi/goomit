@@ -2,6 +2,8 @@ package prompt
 
 import (
 	"strings"
+
+	"main/client"
 )
 
 // Comming from : https://github.com/GNtousakis/llm-commit/blob/main/llm_commit.py#L181
@@ -21,8 +23,13 @@ func promptEnding() string {
 	return "just give me the actual commit message and nothing else in your answer. I want to use your response as it is."
 }
 
-func GeneratePrompt(diff string) string {
-	return strings.TrimSpace(promptContext() + promptTitle() + "Here is the git diff I want you to generate a commit message for : " + diff + promptEnding())
+func GeneratePrompt() (string, error) {
+	diff, err := client.GetGitDiff()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(promptContext() + promptTitle() + "Here is the git diff I want you to generate a commit message for : " + diff + promptEnding()), nil
 }
 
 func GenerateConfPrompt(context string) string {

@@ -13,7 +13,7 @@ import (
 	"main/prompt"
 )
 
-func GenerateConfig() error {
+func GenerateConfig() (string, error) {
 	var context string
 	cmd := exec.Command("mkdir", ".goomit")
 	_, err := cmd.CombinedOutput()
@@ -26,7 +26,7 @@ func GenerateConfig() error {
 		if err.Error() == "exit status 1" {
 			fmt.Println(".goomit/ dir already exist")
 		} else {
-			return fmt.Errorf("Error while adding file to commit \n", err)
+			return "", fmt.Errorf("Error while adding file to commit \n", err)
 		}
 	} else {
 		fmt.Println("config dir created")
@@ -40,30 +40,29 @@ func GenerateConfig() error {
 		fmt.Println("README.md file use in config generation")
 		b, err := os.ReadFile("README.md")
 		if err != nil {
-			return err
+			return "", err
 		}
 		context += string(b)
 	}
 
 	repo, err := getRepoName()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	fmt.Println("Repo find :", repo, "trying to access it via github API")
 
 	opts, err := githubApiCall(repo)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	context += opts[0]
 	context += opts[1]
 
 	p := prompt.GenerateConfPrompt(context)
-	fmt.Println(p)
 
-	return nil
+	return p, nil
 }
 
 func getRepoName() (string, error) {
