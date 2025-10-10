@@ -62,7 +62,7 @@ func main() {
 		request.Prompt = p
 	}
 
-	// fmt.Println(request.Prompt)
+	fmt.Println(request.Prompt)
 
 	fmt.Println("GENERATING...")
 

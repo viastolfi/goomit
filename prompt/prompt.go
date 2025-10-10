@@ -1,10 +1,21 @@
 package prompt
 
 import (
+	"os"
 	"strings"
 
 	"main/client"
 )
+
+func getPromptSpecificContext() string {
+	data, err := os.ReadFile(".goomit/context.md")
+	if err != nil {
+		// TODO add better error handling
+		return ""
+	}
+
+	return string(data)
+}
 
 // Comming from : https://github.com/GNtousakis/llm-commit/blob/main/llm_commit.py#L181
 func promptContext() string {
@@ -16,7 +27,7 @@ func promptConfContext() string {
 }
 
 func promptTitle() string {
-	return "Generate a concise commit message starting with a type keyword (fix:, feat:, ci:, etc.) followed by a one-line summary describing the overall change clearly and briefly. Keep it short, precise, and focused."
+	return "Generate a concise commit message starting with a type keyword (fix:, feat:, ci:, etc.) followed by a one-line summary describing the overall change clearly and briefly. Keep it short, precise, and focused. Then, you will add some further informations using bullet point syntax"
 }
 
 func promptEnding() string {
@@ -24,12 +35,14 @@ func promptEnding() string {
 }
 
 func GeneratePrompt() (string, error) {
+	context := getPromptSpecificContext()
+
 	diff, err := client.GetGitDiff()
 	if err != nil {
 		return "", err
 	}
 
-	return strings.TrimSpace(promptContext() + promptTitle() + "Here is the git diff I want you to generate a commit message for : " + diff + promptEnding()), nil
+	return strings.TrimSpace(promptContext() + promptTitle() + "In a first hand, please take note of this context so you can understand better what this whole project is about" + context + "Here is the git diff I want you to generate a commit message for : " + diff + promptEnding()), nil
 }
 
 func GenerateConfPrompt(context string) string {
