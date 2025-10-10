@@ -6,7 +6,7 @@ import (
 )
 
 func GetGitDiff() (string, error) {
-	cmd := exec.Command("git", "diff", "--color=always")
+	cmd := exec.Command("git", "diff", "--color=always", "--minimal")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("No git repo detected in your current directory \n", err)
