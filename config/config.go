@@ -112,3 +112,17 @@ func githubApiCall(repo string) ([]string, error) {
 	out = append(out, "language: "+lang, "description:"+desc)
 	return out, nil
 }
+
+func WriteConfig(text string) error {
+	f, err := os.Create(".goomit/context.md")
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = f.Write([]byte(text))
+	if err != nil {
+		panic(err)
+	}
+
+	return nil
+}
