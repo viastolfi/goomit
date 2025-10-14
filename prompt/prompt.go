@@ -10,39 +10,78 @@ import (
 func getPromptSpecificContext() string {
 	data, err := os.ReadFile(".goomit/context.md")
 	if err != nil {
-		// TODO add better error handling
-		return ""
+		return "" // context is optional
 	}
-
 	return string(data)
 }
 
-// Comming from : https://github.com/GNtousakis/llm-commit/blob/main/llm_commit.py#L181
-func promptContext() string {
-	return "You are a professional developer with more than 20 years of experience. You're an expert at writing Git commit messages from code diffs. Focus on highlighting the added value of changes (meta-analysis, what could have happened without this change?), followed by bullet points detailing key changes (avoid paraphrasing). Use the specified commit Git style, while forbidding other syntax markers or tags (e.g., markdown, HTML, etc.)"
+func commitPromptTemplate(projectContext, diff string) string {
+	var b strings.Builder
+	b.WriteString("ROLE: You are an experienced software engineer. Craft a high-quality Git commit message.\n")
+	if projectContext != "" {
+		b.WriteString("PROJECT CONTEXT (for understanding only, do NOT copy verbatim):\n" + projectContext + "\n")
+	}
+	b.WriteString(`INSTRUCTIONS:
+1. Use Conventional Commits. Allowed types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert.
+2. Header format: <type>(<optional-scope>): <imperative short summary>
+   - Max 72 chars (hard limit). No trailing period. Imperative mood ("add", "fix", "refactor").
+   - Pick ONE best type (if only dependency / tooling changes => chore; only test code => test; performance improvement => perf; code re-organisation without behaviour change => refactor).
+3. If multiple conceptual changes that should be separate commits are present, STILL produce ONE message capturing the dominant theme (prefer the user curates their diff). Do NOT invent multiple commits.
+4. Body (optional) only if it adds value beyond the header. When used:
+   - Start after a blank line.
+   - Provide concise bullet points starting with '- ' each.
+   - Each bullet: high-level intent / effect / rationale. DO NOT paraphrase code line-by-line.
+   - Group related file changes together; mention file paths only when necessary for clarity (prefer patterns, e.g. 'client/' or 'prompt:').
+5. MUST NOT include: code blocks, markdown headers, backticks, numbered lists, emojis, hashtags, quotes, HTML, or extra commentary outside the commit message.
+6. Detect special cases:
+   - Pure revert (diff shows previous changes removed) => use revert: and header "revert: <original header>" if recoverable.
+   - Added tests only => test:
+   - Performance-focused change (algorithmic / reduced complexity) => perf:
+   - Only formatting / whitespace => style:
+7. Security / bug fix: briefly indicate root cause or surface impact (e.g. 'fix(api): prevent nil pointer on empty diff').
+8. Do NOT fabricate information not evident from diff/context.
+9. Ignore ANSI color codes or diff metadata noise if any.
+10. If diff is extremely large (> ~2,000 changed lines) summarise major themes (e.g. 'migrate X', 'rename Y') instead of enumerating every file.
+
+OUTPUT REQUIREMENTS:
+- Output ONLY the commit message text (header + optional body). Nothing else.
+- No leading or trailing blank lines beyond the standard single blank line separating header and body.
+
+REFERENCE EXAMPLES (do NOT copy literally):
+feat(auth): add OAuth2 login flow
+
+- introduce token exchange with provider X
+- persist refresh token securely in encrypted store
+- update user model with provider id
+
+fix(cli): handle empty config path
+
+- prevent nil dereference when no config file exists
+- add user-facing error with hint to run 'init'
+
+refactor(prompt): consolidate template building logic
+
+- merge scattered string concatenations into builder pattern
+- no functional changes
+
+Now analyse the provided diff and produce the commit message.
+`)
+	b.WriteString("\nDIFF START\n" + diff + "\nDIFF END\n")
+	b.WriteString("\nRETURN ONLY THE COMMIT MESSAGE (header + optional body).")
+	return b.String()
 }
 
 func promptConfContext() string {
-	return "Your task is to summarize a bunch of different informtation about a git repository so this summization can then be used as a context element for other llm prompt to generate commit Message. You are going to be gived a README.md file text, the language used in the code base and the git description of the repository. Write your out puts as an md text that will then be writted in a file. Keep it not to verbose and relatively short. Make it so it's usable by llm to get context. I want the following things :\n* Very short summarisation of the apps\n* The key features\n* A brief tech stack with only the essential information\n"
-}
-
-func promptTitle() string {
-	return "Generate a concise commit message starting with a type keyword (fix:, feat:, ci:, etc.) followed by a one-line summary describing the overall change clearly and briefly. Keep it short, precise, and focused. Then, you will add some further informations using bullet point syntax"
-}
-
-func promptEnding() string {
-	return "just give me the actual commit message and nothing else in your answer. I want to use your response as it is."
+	return "Your task is to summarise multiple sources about a Git repository so the summary can later feed another LLM when generating commit messages. You will be given README content plus basic repo metadata (language, description). Produce concise markdown with:\n* Very short app summary (1 sentence)\n* Key features (bullets)\n* Brief tech stack (bullets, only essentials)\nKeep it short, factual, no marketing fluff.\n"
 }
 
 func GeneratePrompt() (string, error) {
-	context := getPromptSpecificContext()
-
+	projectContext := getPromptSpecificContext()
 	diff, err := client.GetGitDiff()
 	if err != nil {
 		return "", err
 	}
-
-	return strings.TrimSpace(promptContext() + promptTitle() + "In a first hand, please take note of this context so you can understand better what this whole project is about" + context + "Here is the git diff I want you to generate a commit message for : " + diff + promptEnding()), nil
+	return strings.TrimSpace(commitPromptTemplate(projectContext, diff)), nil
 }
 
 func GenerateConfPrompt(context string) string {
