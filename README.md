@@ -18,8 +18,11 @@ Download the model you want using ollama `ollama pull llama3`
 
 Then just use the app, you can specify the model by using the `-m` argument, default one is llama3
 
+You can also generate a sort of config that summarize some information about your repo (readme, used language, repo description) so the prompt will include this context for better results
+
 - go mod tidy
 - ./build.sh
+- ./goomit config generate
 - ./goomit -m my-model
 
 ### Limitations
@@ -30,6 +33,8 @@ Since this is a work in progress there is some limitations :
 - I need to run some test by using different model so I can use the one I feel like is the best as the default one
 - The model as no context at all about your project and this is a feature I need to implement so the commit message is more accurate
 - Some bugs may or may not occurs, as I said this is not a production ready things but just a POC
+
+Since the last propmpt update, a new important limitation has appeard. There is huge performance issue depending on the model you'r using and your machine capability. It's not a weird behavior when using self hosted llm but still this is a huge jump in time needed for commit generation between old and new prompt. Will need to investigate on that. 
 
 ### Author
 
